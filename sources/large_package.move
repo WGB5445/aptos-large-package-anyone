@@ -61,19 +61,22 @@ module contract::large_packages {
     public entry fun publish_staged_package(owner: &signer, chunk_owner: address) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         publish_to_account(owner, staging_area);
-        cleanup_staging_area_internal(*staging_area.target_address.borrow());
+        let chunk_owner_address = *staging_area.target_address.borrow();
+        cleanup_staging_area_internal(chunk_owner_address);
     }
 
     public entry fun publish_object_staged_package(owner: &signer, chunk_owner: address) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         publish_to_object(owner, staging_area);
-        cleanup_staging_area_internal(*staging_area.target_address.borrow());
+        let chunk_owner_address = *staging_area.target_address.borrow();
+        cleanup_staging_area_internal(chunk_owner_address);
     }
 
     public entry fun upgrade_object_staged_package(owner: &signer, chunk_owner: address ,code_object: Object<PackageRegistry>) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         upgrade_object_code(owner, staging_area, code_object);
-        cleanup_staging_area_internal(*staging_area.target_address.borrow());
+        let chunk_owner_address = *staging_area.target_address.borrow();
+        cleanup_staging_area_internal(chunk_owner_address);
     }
 
     public entry fun set_target_address(owner: &signer, new_target: address) acquires StagingArea {
@@ -193,7 +196,7 @@ module contract::large_packages {
         let StagingArea {
             code,
             ..,
-        } = StagingArea[chunk_owner];
+        } = move_from(chunk_owner);
         code.destroy();
     }
 
