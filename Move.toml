@@ -1,0 +1,17 @@
+[package]
+name = "large_package_anyone"
+version = "1.0.0"
+authors = []
+
+[addresses]
+contract = "_"
+
+[dev-addresses]
+contract = "0xdead"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]
