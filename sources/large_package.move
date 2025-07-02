@@ -184,10 +184,8 @@ module contract::large_packages {
     ): vector<vector<u8>> {
         let last_module_idx = staging_area.last_module_idx;
         let code = vector[];
-        let i = 0;
-        while (i <= last_module_idx) {
+        for (i in 0..last_module_idx) {
             code.push_back(*staging_area.code.borrow(i));
-            i += 1;
         };
         code
     }
