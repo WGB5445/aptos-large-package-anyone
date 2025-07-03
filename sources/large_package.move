@@ -45,7 +45,7 @@ module contract::large_packages {
         metadata_serialized: vector<u8>,
         code: SmartTable<u64, vector<u8>>,
         last_module_idx: u64,
-        target_address: Option<address>,
+        target_address: Option<address>
     }
 
     public entry fun stage_code_chunk(
@@ -53,33 +53,47 @@ module contract::large_packages {
         metadata_chunk: vector<u8>,
         code_indices: vector<u16>,
         code_chunks: vector<vector<u8>>,
-        target_address: address, 
+        target_address: address
     ) acquires StagingArea {
-        stage_code_chunk_internal(owner, metadata_chunk, code_indices, code_chunks, target_address);
+        stage_code_chunk_internal(
+            owner,
+            metadata_chunk,
+            code_indices,
+            code_chunks,
+            target_address
+        );
     }
 
-    public entry fun publish_staged_package(owner: &signer, chunk_owner: address) acquires StagingArea {
+    public entry fun publish_staged_package(
+        owner: &signer, chunk_owner: address
+    ) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         publish_to_account(owner, staging_area);
         let chunk_owner_address = *staging_area.target_address.borrow();
         cleanup_staging_area_internal(chunk_owner_address);
     }
 
-    public entry fun publish_object_staged_package(owner: &signer, chunk_owner: address) acquires StagingArea {
+    public entry fun publish_object_staged_package(
+        owner: &signer, chunk_owner: address
+    ) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         publish_to_object(owner, staging_area);
         let chunk_owner_address = *staging_area.target_address.borrow();
         cleanup_staging_area_internal(chunk_owner_address);
     }
 
-    public entry fun upgrade_object_staged_package(owner: &signer, chunk_owner: address ,code_object: Object<PackageRegistry>) acquires StagingArea {
+    public entry fun upgrade_object_staged_package(
+        owner: &signer, chunk_owner: address, code_object: Object<PackageRegistry>
+    ) acquires StagingArea {
         let staging_area = &mut StagingArea[chunk_owner];
         upgrade_object_code(owner, staging_area, code_object);
         let chunk_owner_address = *staging_area.target_address.borrow();
         cleanup_staging_area_internal(chunk_owner_address);
     }
 
-    public entry fun set_target_address(owner: &signer, new_target: address) acquires StagingArea {
+    public entry fun set_target_address(
+        owner: &signer, new_target: address
+    ) acquires StagingArea {
         let staging_area = borrow_global_mut<StagingArea>(signer::address_of(owner));
         staging_area.target_address = option::some(new_target);
     }
@@ -89,22 +103,25 @@ module contract::large_packages {
         metadata_chunk: vector<u8>,
         code_indices: vector<u16>,
         code_chunks: vector<vector<u8>>,
-        target_address: address,
+        target_address: address
     ): &mut StagingArea acquires StagingArea {
         assert!(
             code_indices.length() == code_chunks.length(),
-            error::invalid_argument(ECODE_MISMATCH),
+            error::invalid_argument(ECODE_MISMATCH)
         );
 
         let owner_address = signer::address_of(owner);
 
         if (!exists<StagingArea>(owner_address)) {
-            move_to(owner, StagingArea {
-                metadata_serialized: vector[],
-                code: smart_table::new(),
-                last_module_idx: 0,
-                target_address: option::none(),
-            });
+            move_to(
+                owner,
+                StagingArea {
+                    metadata_serialized: vector[],
+                    code: smart_table::new(),
+                    last_module_idx: 0,
+                    target_address: option::none()
+                }
+            );
         };
 
         let staging_area = borrow_global_mut<StagingArea>(owner_address);
@@ -137,23 +154,21 @@ module contract::large_packages {
     }
 
     inline fun check_publish_permissions(
-        publisher: &signer,
-        staging_area: &mut StagingArea,
+        publisher: &signer, staging_area: &mut StagingArea
     ) {
         assert!(
             staging_area.target_address.is_some(),
-            error::invalid_argument(ETARGET_ADDRESS_NOT_SET),
+            error::invalid_argument(ETARGET_ADDRESS_NOT_SET)
         );
 
         assert!(
             &signer::address_of(publisher) == staging_area.target_address.borrow(),
-            error::invalid_argument(EINVALID_PUBLISHER),
+            error::invalid_argument(EINVALID_PUBLISHER)
         );
     }
 
     inline fun publish_to_account(
-        publisher: &signer,
-        staging_area: &mut StagingArea,
+        publisher: &signer, staging_area: &mut StagingArea
     ) {
         check_publish_permissions(publisher, staging_area);
         let code = assemble_module_code(staging_area);
@@ -161,27 +176,31 @@ module contract::large_packages {
     }
 
     inline fun publish_to_object(
-        publisher: &signer,
-        staging_area: &mut StagingArea,
+        publisher: &signer, staging_area: &mut StagingArea
     ) {
         check_publish_permissions(publisher, staging_area);
         let code = assemble_module_code(staging_area);
-        object_code_deployment::publish(publisher, staging_area.metadata_serialized, code);
+        object_code_deployment::publish(
+            publisher, staging_area.metadata_serialized, code
+        );
     }
 
     inline fun upgrade_object_code(
         publisher: &signer,
         staging_area: &mut StagingArea,
-        code_object: Object<PackageRegistry>,
+        code_object: Object<PackageRegistry>
     ) {
         check_publish_permissions(publisher, staging_area);
         let code = assemble_module_code(staging_area);
-        object_code_deployment::upgrade(publisher, staging_area.metadata_serialized, code, code_object);
+        object_code_deployment::upgrade(
+            publisher,
+            staging_area.metadata_serialized,
+            code,
+            code_object
+        );
     }
 
-    inline fun assemble_module_code(
-        staging_area: &mut StagingArea,
-    ): vector<vector<u8>> {
+    inline fun assemble_module_code(staging_area: &mut StagingArea): vector<vector<u8>> {
         let last_module_idx = staging_area.last_module_idx;
         let code = vector[];
         for (i in 0..last_module_idx) {
@@ -191,10 +210,7 @@ module contract::large_packages {
     }
 
     inline fun cleanup_staging_area_internal(chunk_owner: address) acquires StagingArea {
-        let StagingArea {
-            code,
-            ..,
-        } = move_from(chunk_owner);
+        let StagingArea { code,.. } = move_from(chunk_owner);
         code.destroy();
     }
 
