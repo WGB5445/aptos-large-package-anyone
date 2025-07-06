@@ -53,7 +53,7 @@ module contract::large_packages {
         metadata_chunk: vector<u8>,
         code_indices: vector<u16>,
         code_chunks: vector<vector<u8>>,
-        target_address: address
+        target_address: option::Option<address>
     ) acquires StagingArea {
         stage_code_chunk_internal(
             owner,
@@ -91,19 +91,12 @@ module contract::large_packages {
         cleanup_staging_area_internal(chunk_owner_address);
     }
 
-    public entry fun set_target_address(
-        owner: &signer, new_target: address
-    ) acquires StagingArea {
-        let staging_area = borrow_global_mut<StagingArea>(signer::address_of(owner));
-        staging_area.target_address = option::some(new_target);
-    }
-
     inline fun stage_code_chunk_internal(
         owner: &signer,
         metadata_chunk: vector<u8>,
         code_indices: vector<u16>,
         code_chunks: vector<vector<u8>>,
-        target_address: address
+        target_address: option::Option<address>
     ): &mut StagingArea acquires StagingArea {
         assert!(
             code_indices.length() == code_chunks.length(),
@@ -119,16 +112,14 @@ module contract::large_packages {
                     metadata_serialized: vector[],
                     code: smart_table::new(),
                     last_module_idx: 0,
-                    target_address: option::none()
+                    target_address: target_address
                 }
             );
         };
 
         let staging_area = borrow_global_mut<StagingArea>(owner_address);
 
-        if (staging_area.target_address.is_none()) {
-            staging_area.target_address = option::some(target_address);
-        };
+        staging_area.target_address = target_address;
 
         if (!metadata_chunk.is_empty()) {
             staging_area.metadata_serialized.append(metadata_chunk);
@@ -201,9 +192,9 @@ module contract::large_packages {
     }
 
     inline fun assemble_module_code(staging_area: &mut StagingArea): vector<vector<u8>> {
-        let last_module_idx = staging_area.last_module_idx;
+        let length = staging_area.code.length();
         let code = vector[];
-        for (i in 0..last_module_idx) {
+        for (i in 0..length) {
             code.push_back(*staging_area.code.borrow(i));
         };
         code
