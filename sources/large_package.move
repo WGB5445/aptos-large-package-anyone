@@ -67,28 +67,22 @@ module contract::large_packages {
     public entry fun publish_staged_package(
         owner: &signer, chunk_owner: address
     ) acquires StagingArea {
-        let staging_area = &mut StagingArea[chunk_owner];
-        publish_to_account(owner, staging_area);
-        let chunk_owner_address = *staging_area.target_address.borrow();
-        cleanup_staging_area_internal(chunk_owner_address);
+        publish_to_account(owner, &mut StagingArea[chunk_owner]);
+        cleanup_staging_area_internal(chunk_owner);
     }
 
     public entry fun publish_object_staged_package(
         owner: &signer, chunk_owner: address
     ) acquires StagingArea {
-        let staging_area = &mut StagingArea[chunk_owner];
-        publish_to_object(owner, staging_area);
-        let chunk_owner_address = *staging_area.target_address.borrow();
-        cleanup_staging_area_internal(chunk_owner_address);
+        publish_to_object(owner, &mut StagingArea[chunk_owner]);
+        cleanup_staging_area_internal(chunk_owner);
     }
 
     public entry fun upgrade_object_staged_package(
         owner: &signer, chunk_owner: address, code_object: Object<PackageRegistry>
     ) acquires StagingArea {
-        let staging_area = &mut StagingArea[chunk_owner];
-        upgrade_object_code(owner, staging_area, code_object);
-        let chunk_owner_address = *staging_area.target_address.borrow();
-        cleanup_staging_area_internal(chunk_owner_address);
+        upgrade_object_code(owner, &mut StagingArea[chunk_owner], code_object);
+        cleanup_staging_area_internal(chunk_owner);
     }
 
     inline fun stage_code_chunk_internal(
